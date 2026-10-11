@@ -78,4 +78,4 @@ built fonts; both are handy when adjusting a recipe.
 SIL Open Font License 1.1, the same as DM Sans. See [OFL.txt](OFL.txt).
 
 DM Sans is by Colophon Foundry and Jonny Pinhorn, based on Poppins by Indian Type Foundry.
-Cyrillic extension by [gege-mn](https://github.com/gege-mn).
+Cyrillic extension by L'Atelier Gege LLC ([gege-mn](https://github.com/gege-mn)); see [AUTHORS.txt](AUTHORS.txt).

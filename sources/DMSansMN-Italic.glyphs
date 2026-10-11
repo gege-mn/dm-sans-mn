@@ -191865,7 +191865,7 @@ key = designers;
 values = (
 {
 language = dflt;
-value = "Colophon Foundry, Jonny Pinhorn";
+value = "Colophon Foundry, Jonny Pinhorn; Cyrillic by L'Atelier Gege LLC";
 }
 );
 },
@@ -191891,17 +191891,17 @@ key = manufacturers;
 values = (
 {
 language = dflt;
-value = "Colophon Foundry";
+value = "L'Atelier Gege LLC";
 }
 );
 },
 {
 key = manufacturerURL;
-value = "https://www.colophon-foundry.org";
+value = "https://github.com/gege-mn/dm-sans-mn";
 },
 {
 key = vendorID;
-value = GOOG;
+value = NONE;
 }
 );
 stems = (

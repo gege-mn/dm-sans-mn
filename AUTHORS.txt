@@ -1,0 +1,4 @@
+# This is the official list of DM Sans MN project authors for copyright purposes.
+# The DM Sans authors are credited by their own copyright line in OFL.txt.
+
+L'Atelier Gege LLC (https://github.com/gege-mn)

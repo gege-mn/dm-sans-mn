@@ -15,6 +15,7 @@ from recipes import GLYPHS, REF_MASTER, STYLISTIC_SETS, Ctx
 
 FAMILY = "DM Sans MN"
 REPO = "https://github.com/gege-mn/dm-sans-mn"
+MAKER = "L'Atelier Gege LLC"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPSTREAM = os.path.join(ROOT, "upstream", "Sans", "Source")
 OUT = os.path.join(ROOT, "sources")
@@ -107,10 +108,21 @@ def add_layer(font, glyph, master, shape, contours, place):
 
 def finish(font, style_suffix=""):
     font.familyName = FAMILY
+    # credits: upstream's copyright and designers stay; this version's maker is added beside them
+    edits = {
+        "copyrights": lambda text: f"{text}. Copyright 2026 The {FAMILY} Project Authors ({REPO})",
+        "designers": lambda text: f"{text}; Cyrillic by {MAKER}",
+        "manufacturers": lambda text: MAKER,
+        "manufacturerURL": lambda text: REPO,
+        "vendorID": lambda text: "NONE",
+    }
     for prop in font.properties:
-        if prop.key == "copyrights":
-            prop._localized_values = {lang: f"{text}. Copyright 2026 The {FAMILY} Project Authors ({REPO})"
-                                      for lang, text in prop._localized_values.items()}
+        if prop.key in edits:
+            if prop._localized_values:
+                prop._localized_values = {lang: edits[prop.key](text)
+                                          for lang, text in prop._localized_values.items()}
+            else:
+                prop._value = edits[prop.key](prop._value)
     for instance in font.instances:  # upstream gives some instances their own family name
         for prop in instance.properties:
             if prop.key == "familyNames":
