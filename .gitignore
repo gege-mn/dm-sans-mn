@@ -1,0 +1,9 @@
+.venv/
+upstream/
+out/
+ref/
+__pycache__/
+.DS_Store
+sources/instance_ufos/
+sources/.ninja_log
+sources/build.ninja

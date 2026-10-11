@@ -1,0 +1,9 @@
+glyphsLib
+fontmake
+fonttools
+gftools
+brotli
+pillow
+freetype-py
+numpy
+pyyaml
