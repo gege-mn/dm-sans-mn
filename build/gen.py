@@ -2,6 +2,7 @@
 
     python build/gen.py            # writes sources/*.glyphs
 """
+import json
 import math
 import os
 import sys
@@ -16,6 +17,7 @@ from recipes import GLYPHS, REF_MASTER, STYLISTIC_SETS, Ctx
 FAMILY = "DM Sans MN"
 REPO = "https://github.com/gege-mn/dm-sans-mn"
 MAKER = "L'Atelier Gege LLC"
+VERSION = (1, 0)  # this family's own version, independent of upstream DM Sans
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPSTREAM = os.path.join(ROOT, "upstream", "Sans", "Source")
 OUT = os.path.join(ROOT, "sources")
@@ -108,6 +110,7 @@ def add_layer(font, glyph, master, shape, contours, place):
 
 def finish(font, style_suffix=""):
     font.familyName = FAMILY
+    font.versionMajor, font.versionMinor = VERSION
     # credits: upstream's copyright and designers stay; this version's maker is added beside them
     edits = {
         "copyrights": lambda text: f"{text}. Copyright 2026 The {FAMILY} Project Authors ({REPO})",
@@ -140,6 +143,43 @@ def finish(font, style_suffix=""):
             prefix.code = prefix.code.rstrip() + "\nlanguagesystem cyrl dflt;\n"
 
 
+KERN_WEIGHTS = {"100": 20, "300": 70, "400": 84, "1000": 171}  # tool's wght -> master coordinate
+
+
+def kern_now(font, master_id, left, right):
+    """The kerning a pair gets today, resolving groups the way the font does."""
+    table = font.kerning.get(master_id, {})
+    lkeys = [left.name] + ([f"@MMK_L_{left.rightKerningGroup}"] if left.rightKerningGroup else [])
+    rkeys = [right.name] + ([f"@MMK_R_{right.leftKerningGroup}"] if right.leftKerningGroup else [])
+    for lk in lkeys:
+        for rk in rkeys:
+            if rk in table.get(lk, {}):
+                return table[lk][rk]
+    return 0
+
+
+def apply_kerning(font):
+    """Add the pair adjustments made in tools/kerning.html (build/kerning.json) on top of inherited kerning."""
+    path = os.path.join(ROOT, "build", "kerning.json")
+    if not os.path.exists(path):
+        return 0
+    with open(path, encoding="utf-8") as fh:
+        pairs = json.load(fh).get("pairs", {})
+    by_char = {chr(int(g.unicode, 16)): g for g in font.glyphs if g.unicode}
+    coord = {v: k for k, v in KERN_WEIGHTS.items()}
+    n = 0
+    for pair, values in pairs.items():
+        if len(pair) != 2 or pair[0] not in by_char or pair[1] not in by_char:
+            continue
+        left, right = by_char[pair[0]], by_char[pair[1]]
+        for m in font.masters:
+            delta = values.get(coord.get(m.axes[1], ""), 0)
+            if delta:
+                font.setKerningForPair(m.id, left.name, right.name, kern_now(font, m.id, left, right) + delta)
+                n += 1
+    return n
+
+
 def write_config(stem):
     """gftools-builder config: upstream's, pointed at the renamed sources."""
     import yaml
@@ -163,6 +203,7 @@ def main():
     italic = glyphsLib.GSFont(os.path.join(UPSTREAM, "DMSans-Italic.glyphs"))
     build_italic(italic, shapes)
     for f, name in ((font, stem), (italic, stem + "-Italic")):
+        apply_kerning(f)
         finish(f)
         out = os.path.join(OUT, name + ".glyphs")
         f.save(out)

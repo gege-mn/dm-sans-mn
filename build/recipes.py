@@ -502,22 +502,40 @@ def ia_lc(c):
     return Shape(mirror_x(bowl + [legc], (xbr + sb) / 2), xbr + sb)
 
 
-def be_lc(c):
+BE_STYLES = {
+    # corner width, corner height, flag length (all as shares of the bowl / the rise), flag rise
+    "sweep": dict(rx=0.64, ry=1.0, reach=0.82, rise=0.0),    # one big arc
+    "flat": dict(rx=0.40, ry=0.50, reach=0.97, rise=0.0),    # upright neck, tight turn, long level flag
+    "rising": dict(rx=0.42, ry=0.55, reach=0.97, rise=0.13),  # same, flag climbing to the right
+    "soft": dict(rx=0.52, ry=0.72, reach=0.92, rise=0.06),   # rounder shoulder, slight climb
+}
+BE_STYLE = "soft"
+
+
+def be_lc(c, style=None):
+    k = BE_STYLES[style or BE_STYLE]
     q, o = c.lc, _o_metrics(c, "o")
     O = c.src("o")[:2]
     x0, side, ow = o.ob[0], o.side, o.ob[2] - o.ob[0]
     ymid, top = (o.ob[1] + o.ob[3]) / 2, c.asc
     b = min(0.97 * o.tb, q.B)
-    xe = x0 + 0.82 * ow
-    rx = 0.64 * ow
-    rxi = rx - side
+    xe = x0 + k["reach"] * ow
+    rx, ry = k["rx"] * ow, k["ry"] * (top - ymid)
+    rxi, ryi = rx - side, max(ry - b, 0.3 * b)
     xi = x0 + side
     tail = path((xi, ymid),
-                arc((xi, ymid), (xi + rxi, top - b), (xi, top - b)),
+                (xi, top - b - ryi),
+                arc((xi, top - b - ryi), (xi + rxi, top - b), (xi, top - b)),
                 (xe, top - b), (xe, top), (x0 + rx, top),
-                arc((x0 + rx, top), (x0, ymid), (x0, top)),
-                (xi, ymid))
-    return Shape(O + [ccw(tail)], c.w("o"))
+                arc((x0 + rx, top), (x0, top - ry), (x0, top)),
+                (x0, ymid), (xi, ymid))
+    # let the flag climb: lift points in proportion to how far right and how high they sit
+    span = top - b - ymid
+
+    def climb(p):
+        g = min(max((p[1] - ymid) / span, 0), 1)
+        return p[0], p[1] + k["rise"] * (p[0] - xe) * g
+    return Shape(O + [ccw([tuple(climb(p) for p in seg) for seg in tail])], c.w("o"))
 
 
 def ustraight_lc(c):

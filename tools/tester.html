@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DM Sans MN tester</title>
+<style>
+  @font-face { font-family: "DM Sans MN"; src: url("../fonts/webfonts/DMSansMN[opsz,wght].woff2") format("woff2"); font-weight: 100 1000; font-style: normal; }
+  @font-face { font-family: "DM Sans MN"; src: url("../fonts/webfonts/DMSansMN-Italic[opsz,wght].woff2") format("woff2"); font-weight: 100 1000; font-style: italic; }
+  :root { --bg: #fafaf8; --fg: #16161a; --muted: #6b6b76; --line: #dddcd6; --panel: #ffffff; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #131316; --fg: #f1f1ee; --muted: #9a9aa6; --line: #2d2d34; --panel: #1b1b20; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 1; background: var(--panel); border-bottom: 1px solid var(--line); padding: 12px 16px;
+           display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+  header strong { font-size: 15px; }
+  header a { color: var(--muted); }
+  label { display: flex; align-items: center; gap: 8px; color: var(--muted); white-space: nowrap; }
+  label output { color: var(--fg); min-width: 3ch; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 150px; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  section { padding: 20px 16px 32px; min-width: 0; }
+  section + section { border-left: 1px solid var(--line); }
+  h2 { margin: 0 0 12px; font: 600 12px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .sample { font-family: "DM Sans MN"; outline: none; overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.25; }
+  .mixed { grid-column: 1 / -1; border-top: 1px solid var(--line); border-left: 0 !important; }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; } section + section { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <strong>DM Sans MN</strong>
+  <label>Weight <input type="range" id="wght" min="100" max="1000" value="400"><output id="wghtOut"></output></label>
+  <label>Optical size <input type="range" id="opsz" min="9" max="40" step="0.5" value="14"><output id="opszOut"></output></label>
+  <label>Size <input type="range" id="size" min="12" max="160" value="44"><output id="sizeOut"></output></label>
+  <label><input type="checkbox" id="italic"> Italic</label>
+  <label><input type="checkbox" id="ss02"> ss02 (a, а)</label>
+  <label><input type="checkbox" id="ss05"> ss05 (y, у)</label>
+  <a href="kerning.html">Kerning tool</a>
+</header>
+<main>
+  <section>
+    <h2>Latin (upstream DM Sans) — click to edit</h2>
+    <div class="sample" contenteditable spellcheck="false">The quick brown fox jumps over the lazy dog.
+Brand book, typography and colour.
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz
+0123456789 $€£ &amp;@#%</div>
+  </section>
+  <section>
+    <h2>Cyrillic (new) — click to edit</h2>
+    <div class="sample" contenteditable spellcheck="false">Өнөөдөр цаг агаар сайхан байна, үдээс хойш.
+Брэндийн гарын авлага, үсэг ба өнгө.
+АБВГДЕЁЖЗИЙКЛМНОӨПРСТУҮФХЦЧШЩЪЫЬЭЮЯ
+абвгдеёжзийклмноөпрстуүфхцчшщъыьэюя
+0123456789 ₮ № «жишээ»</div>
+  </section>
+  <section class="mixed">
+    <h2>Mixed, same line</h2>
+    <div class="sample" contenteditable spellcheck="false">Hamburgefonstiv Намбургэфонстив · HOnon НОнон · Aa Аа Ee Ее Oo Оо Pp Рр Cc Сс Xx Хх Yy Уу · nhu пни · BRK ВЯК</div>
+  </section>
+</main>
+<script>
+  const $ = id => document.getElementById(id);
+  function apply() {
+    const wght = $("wght").value, opsz = $("opsz").value, size = $("size").value;
+    $("wghtOut").textContent = wght; $("opszOut").textContent = opsz; $("sizeOut").textContent = size + "px";
+    const feats = [$("ss02").checked && '"ss02"', $("ss05").checked && '"ss05"'].filter(Boolean).join(", ");
+    for (const el of document.querySelectorAll(".sample")) {
+      el.style.fontSize = size + "px";
+      el.style.fontStyle = $("italic").checked ? "italic" : "normal";
+      el.style.fontVariationSettings = `"wght" ${wght}, "opsz" ${opsz}`;
+      el.style.fontFeatureSettings = feats || "normal";
+    }
+  }
+  for (const id of ["wght", "opsz", "size", "italic", "ss02", "ss05"]) $(id).addEventListener("input", apply);
+  apply();
+</script>
+</body>
+</html>

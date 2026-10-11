@@ -18,8 +18,12 @@ if [ ! -d upstream ]; then
 fi
 
 python build/gen.py
-[ "$1" = quick ] && printf 'buildStatic: false\n' >> sources/config.yaml
-rm -rf fonts
+if [ "$1" = quick ]; then
+  printf 'buildStatic: false\n' >> sources/config.yaml
+  rm -rf fonts/variable fonts/webfonts
+else
+  rm -rf fonts
+fi
 gftools builder sources/config.yaml
 for f in fonts/variable/*.ttf; do
   fonttools ttLib.woff2 compress -q -o "fonts/webfonts/$(basename "${f%.ttf}").woff2" "$f" 2>/dev/null || {
@@ -28,4 +32,6 @@ for f in fonts/variable/*.ttf; do
   }
 done
 python build/gen.py >/dev/null   # restore the full config if this was a quick build
+# what the built fonts already contain, so tools/kerning.html previews only newer changes
+if [ -f build/kerning.json ]; then cp build/kerning.json fonts/kerning.baked.json; else rm -f fonts/kerning.baked.json; fi
 ls fonts/*

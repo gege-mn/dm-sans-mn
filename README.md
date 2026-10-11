@@ -64,6 +64,20 @@ Needs [uv](https://docs.astral.sh/uv/) and git.
 The script fetches upstream DM Sans at a pinned commit, writes `sources/*.glyphs`, and builds with
 `gftools builder`. To change the family name, edit `FAMILY` in `build/gen.py`.
 
+## Try it and tune the kerning
+
+```sh
+.venv/bin/python tools/serve.py     # opens http://localhost:8765
+```
+
+- **Type tester** (`tools/tester.html`): Latin and Cyrillic side by side with sliders for weight, optical
+  size and size, plus italic and the stylistic sets.
+- **Kerning tool** (`tools/kerning.html`): pick a pair, nudge it with the arrow keys at each of the four
+  master weights, and press Rebuild. Values are saved to `build/kerning.json` and added on top of the
+  inherited kerning at build time.
+- **First-pass kerning** (`tools/autokern.py --write`): proposes values for Cyrillic pairs with no inherited
+  kerning and merges them into `build/kerning.json` without touching pairs already set there.
+
 `tools/show.py` renders glyphs straight from a source and `tools/specimen.py` sets text with the
 built fonts; both are handy when adjusting a recipe.
 
@@ -71,7 +85,9 @@ built fonts; both are handy when adjusting a recipe.
 
 - The letterforms are generated and reviewed on screen, not tuned by a type designer.
 - Italic Cyrillic is a slanted upright, without the optical corrections upstream gave its Latin.
-- Cyrillic kerning is inherited from Latin letters with the same edge shapes; no pairs were added.
+- Cyrillic kerning is inherited from Latin letters with the same edge shapes. Pairs that inherit nothing
+  get a conservative first pass from `tools/autokern.py`, fitted to upstream's Latin kerning; it tightens
+  less than a designer would and has not been checked pair by pair.
 
 ## Licence
 

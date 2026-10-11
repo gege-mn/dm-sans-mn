@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DM Sans MN kerning</title>
+<style>
+  @font-face { font-family: "DM Sans MN"; src: url("../fonts/webfonts/DMSansMN[opsz,wght].woff2") format("woff2"); font-weight: 100 1000; font-style: normal; }
+  @font-face { font-family: "DM Sans MN"; src: url("../fonts/webfonts/DMSansMN-Italic[opsz,wght].woff2") format("woff2"); font-weight: 100 1000; font-style: italic; }
+  :root { --bg: #fafaf8; --fg: #16161a; --muted: #6b6b76; --line: #dddcd6; --panel: #ffffff; --accent: #2f5bd8; --mark: #e8eefc; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #131316; --fg: #f1f1ee; --muted: #9a9aa6; --line: #2d2d34; --panel: #1b1b20; --accent: #8aa6ff; --mark: #232c47; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 10px; max-height: 100vh; position: sticky; top: 0; }
+  aside h1 { margin: 0; font-size: 15px; }
+  aside a { color: var(--muted); }
+  #list { flex: 1; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+  #list button { display: flex; justify-content: space-between; width: 100%; border: 0; border-bottom: 1px solid var(--line); background: none; color: inherit;
+                 padding: 6px 10px; font: 20px/1.2 "DM Sans MN"; cursor: pointer; text-align: left; }
+  #list button span { font: 12px/2 system-ui; color: var(--muted); font-variant-numeric: tabular-nums; }
+  #list button[aria-current=true] { background: var(--mark); }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  input[type=text] { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: inherit; font: 16px "DM Sans MN"; }
+  button.b { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: inherit; font: inherit; cursor: pointer; }
+  button.b[aria-pressed=true] { border-color: var(--accent); color: var(--accent); }
+  button.b.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  main { padding: 18px 22px; min-width: 0; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 14px; }
+  .bar label { color: var(--muted); display: flex; gap: 8px; align-items: center; }
+  #value { font: 600 28px/1 system-ui; font-variant-numeric: tabular-nums; min-width: 5ch; }
+  .hint { color: var(--muted); font-size: 13px; }
+  .view { font-family: "DM Sans MN"; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.2; padding: 10px 0; border-top: 1px solid var(--line); }
+  .view mark { background: var(--mark); color: inherit; }
+  textarea { width: 100%; min-height: 70px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: inherit; font: 15px system-ui; }
+  #status { color: var(--muted); font-size: 13px; min-height: 1.4em; }
+  @media (max-width: 760px) { body { grid-template-columns: 1fr; } aside { position: static; max-height: none; } #list { max-height: 220px; } }
+</style>
+</head>
+<body>
+<aside>
+  <h1>Kerning</h1>
+  <div class="row"><input type="text" id="newPair" maxlength="2" placeholder="pair, e.g. ГД" aria-label="New pair"><button class="b" id="add">Add</button></div>
+  <div id="list"></div>
+  <button class="b" id="starter">Add common Cyrillic pairs</button>
+  <button class="b primary" id="build">Rebuild fonts with these values</button>
+  <div id="status"></div>
+  <a href="tester.html">Type tester</a>
+</aside>
+<main>
+  <div class="bar">
+    <span class="row" id="weights"></span>
+    <label>Size <input type="range" id="size" min="40" max="260" value="150"></label>
+    <label><input type="checkbox" id="italic"> Italic</label>
+  </div>
+  <div class="bar">
+    <span id="value">0</span>
+    <button class="b" data-step="-10">−10</button><button class="b" data-step="-1">−1</button>
+    <button class="b" data-step="1">+1</button><button class="b" data-step="10">+10</button>
+    <button class="b" id="allWeights">Use this value in all weights</button>
+    <button class="b" id="remove">Remove pair</button>
+  </div>
+  <p class="hint">← → change by 5 units (Shift: 1) · ↑ ↓ move through the list · values are thousandths of the font size, added to the kerning the font already has. Each weight has its own value; weights in between are interpolated by the font.</p>
+  <div class="view" id="pairView"></div>
+  <p class="hint">Your own text, with every pair in the list applied:</p>
+  <textarea id="text" spellcheck="false">ГАДААД ХУДАЛДАА · ТУЛГУУР · УЛААНБААТАР · ГЭРЭЭ · Түүх, туулай, гудамж, газар, үлгэр</textarea>
+  <div class="view" id="textView" style="font-size:54px"></div>
+</main>
+<script>
+  const WEIGHTS = [["Thin", "100"], ["Light", "300"], ["Regular", "400"], ["ExtraBlack", "1000"]];
+  const STARTER = ["ГА", "ГД", "ГЛ", "Га", "Го", "Гэ", "Гү", "ТА", "ТД", "ТЛ", "Та", "То", "Тэ", "Ту", "УА", "УД", "УЛ", "Уд", "Ул", "Ун",
+                   "ҮД", "ҮЛ", "Үд", "Үл", "Үн", "РА", "РД", "РЛ", "ХО", "ХӨ", "КО", "ЖО", "АУ", "АТ", "АЧ", "ЬТ", "ЪТ", "го", "гэ", "гд", "гл", "та", "тэ", "ул", "уд", "ра"];
+  const $ = id => document.getElementById(id);
+  let pairs = {}, baked = {}, weight = "400", current = null, saveTimer;
+  const dirty = new Set(), removed = new Set();  // only what this tab changed is sent to the server
+
+  const get = (table, pair, w) => (table[pair] && table[pair][w]) || 0;
+
+  function kerned(text, mark) {
+    // The loaded font already contains the baked values, so only the difference is previewed.
+    const chars = [...text], out = [];
+    chars.forEach((ch, i) => {
+      const pair = ch + (chars[i + 1] || ""), d = get(pairs, pair, weight) - get(baked, pair, weight);
+      let html = ch.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+      if (d) html = `<span style="letter-spacing:${d / 1000}em">${html}</span>`;
+      out.push(mark && (pair === mark || chars[i - 1] + ch === mark) ? `<mark>${html}</mark>` : html);
+    });
+    return out.join("");
+  }
+
+  function render() {
+    const list = $("list");
+    list.innerHTML = "";
+    for (const pair of Object.keys(pairs).sort((a, b) => a.localeCompare(b, "mn"))) {
+      const b = document.createElement("button");
+      b.setAttribute("aria-current", pair === current);
+      b.innerHTML = `${pair}<span>${get(pairs, pair, weight)}</span>`;
+      b.onclick = () => { current = pair; render(); };
+      list.append(b);
+    }
+    for (const b of $("weights").children) b.setAttribute("aria-pressed", b.dataset.w === weight);
+    const style = `"wght" ${weight}, "opsz" 24`;
+    for (const el of [$("pairView"), $("textView")]) {
+      el.style.fontVariationSettings = style;
+      el.style.fontStyle = $("italic").checked ? "italic" : "normal";
+    }
+    $("pairView").style.fontSize = $("size").value + "px";
+    $("value").textContent = current ? get(pairs, current, weight) : "–";
+    if (current) {
+      const upper = current[0] === current[0].toUpperCase() && current[1] === current[1].toUpperCase();
+      const [a, b] = upper ? ["Н", "О"] : ["н", "о"];
+      $("pairView").innerHTML = kerned(`${a}${a}${current}${a}${a} ${b}${b}${current}${b}${b}`, current);
+    } else {
+      $("pairView").innerHTML = '<span class="hint" style="font:14px system-ui">Add a pair on the left to start.</span>';
+    }
+    $("textView").innerHTML = kerned($("text").value);
+  }
+
+  function change(step) {
+    if (!current) return;
+    pairs[current] = { ...pairs[current], [weight]: get(pairs, current, weight) + step };
+    dirty.add(current);
+    render(); save();
+  }
+
+  async function flush() {
+    const change = { set: Object.fromEntries([...dirty].filter(p => pairs[p]).map(p => [p, pairs[p]])), remove: [...removed] };
+    dirty.clear(); removed.clear();
+    const r = await (await fetch("/save-kerning", { method: "POST", body: JSON.stringify(change) })).json();
+    pairs = r.pairs;  // pick up anything saved elsewhere in the meantime
+  }
+
+  function save() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      try { await flush(); $("status").textContent = "Saved to build/kerning.json"; render(); }
+      catch { $("status").textContent = "Not saved: start tools/serve.py"; }
+    }, 300);
+  }
+
+  function addPair(pair) {
+    if ([...pair].length !== 2) return;
+    if (!pairs[pair]) { pairs[pair] = {}; dirty.add(pair); removed.delete(pair); }
+    current = pair;
+  }
+
+  for (const [name, w] of WEIGHTS) {
+    const b = document.createElement("button");
+    b.className = "b"; b.textContent = name; b.dataset.w = w;
+    b.onclick = () => { weight = w; render(); };
+    $("weights").append(b);
+  }
+  $("add").onclick = () => { addPair($("newPair").value.trim()); $("newPair").value = ""; render(); save(); };
+  $("newPair").onkeydown = e => { if (e.key === "Enter") $("add").click(); };
+  $("starter").onclick = () => { const keep = current; STARTER.forEach(addPair); current = keep || STARTER[0]; render(); save(); };
+  $("remove").onclick = () => { if (current) { delete pairs[current]; removed.add(current); dirty.delete(current); current = Object.keys(pairs)[0] || null; render(); save(); } };
+  $("allWeights").onclick = () => { if (current) { const v = get(pairs, current, weight); pairs[current] = Object.fromEntries(WEIGHTS.map(([, w]) => [w, v])); dirty.add(current); render(); save(); } };
+  for (const b of document.querySelectorAll("[data-step]")) b.onclick = () => change(+b.dataset.step);
+  for (const id of ["size", "italic", "text"]) $(id).addEventListener("input", render);
+  $("build").onclick = async () => {
+    $("status").textContent = "Rebuilding (about 15 seconds)…";
+    $("build").disabled = true;
+    try {
+      clearTimeout(saveTimer);
+      await flush();
+      const r = await (await fetch("/build", { method: "POST" })).json();
+      if (r.ok) location.reload(); else { $("status").textContent = "Build failed: " + r.log.slice(-300); $("build").disabled = false; }
+    } catch { $("status").textContent = "Build needs tools/serve.py running"; $("build").disabled = false; }
+  };
+  document.addEventListener("keydown", e => {
+    if (/INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") { change((e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 1 : 5)); e.preventDefault(); }
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      const keys = Object.keys(pairs).sort((a, b) => a.localeCompare(b, "mn")), i = keys.indexOf(current) + (e.key === "ArrowUp" ? -1 : 1);
+      if (keys[i]) { current = keys[i]; render(); }
+      e.preventDefault();
+    }
+  });
+
+  const load = async url => { try { const r = await fetch(url); return r.ok ? (await r.json()).pairs || {} : {}; } catch { return {}; } };
+  (async () => {
+    pairs = await load("../build/kerning.json");
+    baked = await load("../fonts/kerning.baked.json");
+    current = Object.keys(pairs)[0] || null;
+    render();
+  })();
+</script>
+</body>
+</html>
